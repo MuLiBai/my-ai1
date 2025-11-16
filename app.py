@@ -4,7 +4,7 @@ import time
 
 # 页面配置
 st.set_page_config(
-    page_title="智谱AI助手",
+    page_title="小杨同学",
     page_icon="🧠",
     layout="centered"
 )
@@ -27,6 +27,13 @@ def get_api_key():
 
 # 侧边栏设置
 with st.sidebar:
+    st.header("⚙️ 个性化设置")
+    ai_name = st.text_input("给AI起个名字:", value="学习小助手")
+    ai_style = st.selectbox(
+        "选择AI风格:",
+        ["温柔导师", "幽默朋友", "严谨教授", "激励教练"]
+    )
+    with st.sidebar:
     st.header("🔑 API设置")
     
     # 显示当前密钥状态
@@ -48,6 +55,7 @@ with st.sidebar:
     if user_key:
         st.session_state.user_api_key = user_key
         st.success("✅ 手动密钥已设置")
+
 
 # 获取最终使用的API密钥
 api_key = get_api_key()
@@ -98,7 +106,7 @@ def call_zhipu_ai(prompt, conversation_history):
         return f"请求失败: {str(e)}", "error"
 
 # 应用主界面
-st.title("🧠 智谱AI智能助手")
+st.title("小杨同学")
 
 # 显示应用名称（从Secrets获取或使用默认值）
 app_name = st.secrets.get("APP_NAME", "AI聊天助手")
@@ -143,4 +151,5 @@ with st.expander("🔧 调试信息"):
     st.write("Secrets中的所有键:", list(st.secrets.keys()))
 st.markdown("---")
 st.markdown(f"✨ *由 {ai_name} 驱动 | 风格: {ai_style}*")
+
 
