@@ -16,9 +16,7 @@ class MultiFormatMemory:
     def get_file_path(self, file_format=None):
         """获取文件路径"""
         if file_format is None:
-            file_format = self.default_format
-        return f"{self.memory_file}.{file_format}"
-    
+
     def load_memories(self):
         """加载记忆文件 - 支持多种格式"""
         # 尝试按优先级加载不同格式的文件
@@ -129,3 +127,347 @@ class MultiFormatMemory:
                     reader = csv.DictReader(f)
                     for row in reader:
                         new_memories[row['key']] = {
+                            "value": row['value'],
+                            "timestamp": row.get('timestamp', datetime.now().isoformat())
+                        }
+            elif file_path.endswith('.txt'):
+                new_memories = {}
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    for line in f:
+                        if ':' in line:
+                            key, value = line.strip().split(':', 1)
+                            new_memories[key.strip()] = {
+                                "value": value.strip(),
+                                "timestamp": datetime.now().isoformat()
+                            }
+            else:
+                return False
+            
+            # 合并记忆
+            self.memories.update(new_memories)
+            # 保存到所有格式
+            for fmt in ["json", "csv", "txt"]:
+                self.save_memories(fmt)
+            return True
+        except Exception as e:
+            print(f"导入记忆失败: {e}")
+            return False
+
+# 初始化记忆系统
+memory_system = MultiFormatMemory()
+
+# 页面配置
+st.set_page_config(
+    page_title="小杨同学",
+    page_icon="🧠",
+    layout="centered"
+)
+
+# 安全获取API密钥
+def get_api_key():
+    """从Secrets或用户输入获取API密钥"""
+    # 优先使用Secrets中的密钥（生产环境）
+    if 'ZHIPU_API_KEY' in st.secrets:
+        return st.secrets['ZHIPU_API_KEY']
+    # 其次使用session state（用户已在当前会话中输入）
+    elif 'user_api_key' in st.session_state and st.session_state.user_api_key:
+        return st.session_state.user_api_key
+    # 最后返回None，提示用户输入
+    else:
+        return None
+
+# 侧边栏设置
+with st.sidebar:
+    st.header("⚙️ 个性化设置")
+    ai_name = st.text_input("给AI起个名字:", value="学习小助手")
+    ai_style = st.selectbox(
+        "选择AI风格:",
+        ["温柔导师", "幽默朋友", "严谨教授", "激励教练"]
+    )
+    
+    st.header("🔑 API设置")
+    # 显示当前密钥状态
+    secrets_key = st.secrets.get("ZHIPU_API_KEY")
+    if secrets_key:
+        st.success("✅ 检测到Secrets中的API密钥")
+        st.code("密钥已安全存储", language="text")
+    else:
+        st.warning("⚠️ 未检测到Secrets密钥")
+    
+    # 用户手动输入（用于测试或覆盖）
+    user_key = st.text_input(
+        "手动输入API密钥（可选）:",
+        type="password",
+        placeholder="如需覆盖Secrets密钥，请在此输入",
+        key="user_api_key_input"
+    )
+    
+    if user_key:
+        st.session_state.user_api_key = user_key
+        st.success("✅ 手动密钥已设置")
+    
+    # === 新增：多格式记忆管理界面 ===
+    st.markdown("---")
+    st.header("💾 记忆管理系统")
+    
+    with st.expander("📝 添加记忆"):
+        # 添加新记忆
+        col1, col2 = st.columns(2)
+        with col1:
+            memory_key = st.text_input("记忆关键词", placeholder="如：我的生日", key="memory_key")
+        with col2:
+            memory_value = st.text_input("记忆内容", placeholder="如：1月1日", key="memory_value")
+        
+        if st.button("💾 保存记忆", use_container_width=True) and memory_key and memory_value:
+            if memory_system.remember(memory_key, memory_value):
+                st.success("记忆已保存！")
+                # 清空输入框
+                st.rerun()
+            else:
+                st.error("保存失败")
+    
+    with st.expander("📚 查看记忆"):
+        # 显示现有记忆
+        if memory_system.memories:
+            st.subheader("现有记忆")
+            for key, data in memory_system.memories.items():
+                col1, col2, col3 = st.columns([3, 2, 1])
+                with col1:
+                    st.write(f"**{key}**")
+                with col2:
+                    st.write(data['value'])
+                with col3:
+                    if st.button("🗑️", key=f"delete_{key}"):
+                        del memory_system.memories[key]
+                        memory_system.save_memories()
+                        st.success(f"已删除: {key}")
+                        st.rerun()
+        else:
+            st.info("暂无记忆")
+    
+    with st.expander("🔄 导入/导出记忆"):
+        # 导出格式选择
+        export_format = st.selectbox("导出格式:", ["json", "csv", "txt"])
+        
+        # 导出记忆
+        if st.button("📤 导出记忆", use_container_width=True):
+            if memory_system.export_memories(export_format):
+                # 提供下载链接
+                file_path = memory_system.get_file_path(export_format)
+                if os.path.exists(file_path):
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        file_content = f.read()
+                    
+                    st.download_button(
+                        label=f"下载.{export_format}文件",
+                        data=file_content,
+                        file_name=f"ai_memory.{export_format}",
+                        mime="text/plain" if export_format == "txt" else "application/json",
+                        use_container_width=True
+                    )
+            else:
+                st.error("导出失败")
+        
+        # 导入记忆
+        st.subheader("导入记忆")
+        uploaded_file = st.file_uploader(
+            "选择记忆文件", 
+            type=['json', 'csv', 'txt'],
+            help="支持JSON、CSV、TXT格式"
+        )
+        
+        if uploaded_file is not None:
+            # 保存上传的文件
+            temp_path = f"temp_upload.{uploaded_file.name.split('.')[-1]}"
+            with open(temp_path, 'wb') as f:
+                f.write(uploaded_file.getvalue())
+            
+            if st.button("📥 导入文件", use_container_width=True):
+                if memory_system.import_memories(temp_path):
+                    st.success("记忆导入成功！")
+                    # 删除临时文件
+                    if os.path.exists(temp_path):
+                        os.remove(temp_path)
+                    st.rerun()
+                else:
+                    st.error("导入失败")
+        
+        # 多设备同步说明
+        st.info("""
+        **多设备同步方法：**
+        1. 在当前设备导出记忆文件
+        2. 将文件发送到其他设备
+        3. 在其他设备导入该文件
+        """)
+
+# 获取最终使用的API密钥
+api_key = get_api_key()
+
+if not api_key:
+    st.error("""
+    ❌ 未设置API密钥
+    
+    请通过以下方式之一设置：
+    1. **推荐**：在Streamlit Cloud的Secrets中设置 ZHIPU_API_KEY
+    2. **临时**：在左侧边栏手动输入API密钥
+    """)
+    st.stop()
+
+# === 修改：带记忆的智谱AI调用函数 ===
+def call_zhipu_ai(prompt, conversation_history):
+    """调用智谱AI API（带记忆功能）"""
+    
+    # 获取相关记忆
+    relevant_memories = memory_system.get_relevant_memories(prompt)
+    memory_context = ""
+    if relevant_memories:
+        memory_context = "以下是你之前记住的信息：\n" + "\n".join(relevant_memories) + "\n\n"
+    
+    # 自动检测需要记忆的信息
+    should_remember = any(keyword in prompt.lower() for keyword in 
+                         ["记住", "记一下", "我喜欢", "我不喜欢", "我的名字", "我住在", "我是", "我的生日"])
+    
+    # 原有的API调用代码
+    url = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    # 构建消息
+    messages = conversation_history + [{"role": "user", "content": prompt}]
+    
+    # 构建系统提示词（包含记忆）
+    system_prompt = f"""
+    你是一个有记忆的AI助手。{memory_context}
+    请基于已有信息回答问题。如果用户提到新的重要信息，请主动询问是否需要记住这些信息。
+    """
+    
+    # 在消息开头插入系统提示
+    messages_with_memory = [{"role": "system", "content": system_prompt}] + messages
+    
+    data = {
+        "model": "glm-3-turbo",
+        "messages": messages_with_memory,
+        "temperature": 0.7,
+        "max_tokens": st.secrets.get("MAX_TOKENS", 500)  # 使用Secrets中的配置或默认值
+    }
+    
+    try:
+        response = requests.post(url, headers=headers, json=data, timeout=30)
+        if response.status_code == 200:
+            result = response.json()
+            ai_response = result["choices"][0]["message"]["content"]
+            
+            # 自动保存重要信息
+            if should_remember:
+                # 提取关键信息并保存
+                memory_key, memory_value = extract_memory_info(prompt)
+                if memory_key and memory_value:
+                    memory_system.remember(memory_key, memory_value)
+            
+            return ai_response, "success"
+        else:
+            error_msg = f"API错误: {response.status_code}"
+            if response.status_code == 401:
+                error_msg += " - API密钥无效"
+            elif response.status_code == 429:
+                error_msg += " - 请求频率超限"
+            return error_msg, "error"
+    except Exception as e:
+        return f"请求失败: {str(e)}", "error"
+
+# === 新增：信息提取辅助函数 ===
+def extract_memory_info(text):
+    """从文本中提取需要记忆的信息"""
+    text_lower = text.lower()
+    
+    if "我的名字" in text_lower:
+        if "是" in text_lower:
+            name_part = text_lower.split("我的名字")[1].split("是")[1].strip()
+            return "用户姓名", name_part.split("。")[0].strip()
+    
+    elif "我住在" in text_lower:
+        location_part = text_lower.split("我住在")[1].strip()
+        return "用户住址", location_part.split("。")[0].strip()
+    
+    elif "我的生日" in text_lower:
+        birthday_part = text_lower.split("我的生日")[1].strip()
+        return "用户生日", birthday_part.split("。")[0].strip()
+    
+    elif "我喜欢" in text_lower:
+        like_part = text_lower.split("我喜欢")[1].strip()
+        return "用户喜好", like_part.split("。")[0].strip()
+    
+    elif "记住" in text_lower or "记一下" in text_lower:
+        # 通用记忆格式：记住[某某]是[什么]
+        memory_text = text_lower.replace("记住", "").replace("记一下", "").strip()
+        if "是" in memory_text:
+            parts = memory_text.split("是", 1)
+            if len(parts) == 2:
+                return parts[0].strip(), parts[1].strip()
+    
+    return None, None
+
+# 应用主界面
+st.title("小杨同学")
+
+# 显示应用名称（从Secrets获取或使用默认值）
+app_name = st.secrets.get("APP_NAME", "AI聊天助手")
+st.caption(f"应用: {app_name}")
+
+# 显示记忆状态
+memory_count = len(memory_system.memories)
+st.write(f"🧠 当前记忆库: {memory_count} 条记忆")
+
+# 聊天界面代码
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+if prompt := st.chat_input("输入消息..."):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    
+    with st.chat_message("user"):
+        st.markdown(prompt)
+    
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        message_placeholder.markdown("思考中...")
+        
+        response, status = call_zhipu_ai(prompt, st.session_state.messages)
+        
+        if status == "success":
+            full_response = ""
+            for chunk in response.split():
+                full_response += chunk + " "
+                message_placeholder.markdown(full_response + "▌")
+                time.sleep(0.03)
+            message_placeholder.markdown(full_response)
+            
+            st.session_state.messages.append({"role": "assistant", "content": full_response})
+        else:
+            st.error(response)
+
+# 底部控制按钮
+col1, col2 = st.columns(2)
+with col1:
+    if st.button("🗑️ 清空当前对话", use_container_width=True):
+        st.session_state.messages = []
+        st.rerun()
+
+with col2:
+    if st.button("🔄 重新加载记忆", use_container_width=True):
+        memory_system.memories = memory_system.load_memories()
+        st.success("记忆已重新加载")
+        st.rerun()
+
+# 调试信息（仅在开发时显示）
+with st.expander("🔧 调试信息"):
+    st.write("API密钥状态:", "已设置" if api_key else "未设置")
+    st.write("密钥来源:", "Secrets" if 'ZHIPU_API_KEY' in st.secrets else "手动输入")
+    st.write("记忆文件格式:", "JSON, CSV, TXT")
+    st.write("当前记忆数量:", len(memory_system.memories))
