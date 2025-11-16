@@ -33,7 +33,7 @@ with st.sidebar:
         "选择AI风格:",
         ["温柔导师", "幽默朋友", "严谨教授", "激励教练"]
     )
-    with st.sidebar:
+with st.sidebar:
     st.header("🔑 API设置")
     
     # 显示当前密钥状态
@@ -150,6 +150,4 @@ with st.expander("🔧 调试信息"):
     st.write("密钥来源:", "Secrets" if 'ZHIPU_API_KEY' in st.secrets else "手动输入")
     st.write("Secrets中的所有键:", list(st.secrets.keys()))
 st.markdown("---")
-st.markdown(f"✨ *由 {ai_name} 驱动 | 风格: {ai_style}*")
-
-
+st.markdown(f"✨ *由 {ai_name} 驱动 | 风格: {ai_style}
