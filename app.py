@@ -443,17 +443,7 @@ def build_humor_enhanced_prompt(base_prompt, memory_context):
     - 在专业问题和严肃话题上保持适度幽默
     - 根据用户的反应调整幽默程度
     """
-    # 在用户输入处理部分添加幽默检测
-if prompt := st.chat_input("输入消息..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    
-    with st.chat_message("user"):
-        st.markdown(prompt)
-    
-    with st.chat_message("assistant"):
-        message_placeholder = st.empty()
-        message_placeholder.markdown("正在准备有趣回答...")
-        
+ 
         # 检测是否需要特殊幽默回应
         if detect_joke_request(prompt):
             joke_response = tell_random_joke()
@@ -605,6 +595,7 @@ with st.expander("🔧 调试信息"):
     st.write("密钥来源:", "Secrets" if 'ZHIPU_API_KEY' in st.secrets else "手动输入")
     st.write("记忆文件格式:", "JSON, CSV, TXT")
     st.write("当前记忆数量:", len(memory_system.memories))
+
 
 
 
