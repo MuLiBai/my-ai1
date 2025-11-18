@@ -452,13 +452,15 @@ def build_humor_enhanced_prompt(base_prompt, memory_context):
     else:
             response, status = call_zhipu_ai(prompt, st.session_state.messages)
             
-         if           full_response += chunk + " "
+        if status == "success":
+             full_response =""
+             for chunk in response += chunk + " "
                     message_placeholder.markdown(full_response + "▌")
                     time.sleep(0.03)
                 message_placeholder.markdown(full_response)
                 
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
-         else:
+        else:
                 # 使用幽默的错误回应
                 humor_error = humorous_error_response("technical_error")
                 message_placeholder.markdown(humor_error)
@@ -592,6 +594,7 @@ with st.expander("🔧 调试信息"):
     st.write("密钥来源:", "Secrets" if 'ZHIPU_API_KEY' in st.secrets else "手动输入")
     st.write("记忆文件格式:", "JSON, CSV, TXT")
     st.write("当前记忆数量:", len(memory_system.memories))
+
 
 
 
