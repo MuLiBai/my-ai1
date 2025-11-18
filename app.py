@@ -181,10 +181,10 @@ def get_api_key():
 # 侧边栏设置
 with st.sidebar:
     st.header("⚙️ 个性化设置")
-    ai_name = st.text_input("给AI起个名字:", value="学习小助手")
+    ai_name = st.text_input("给AI起个名字:", value="小杨同学")
     ai_style = st.selectbox(
         "选择AI风格:",
-        ["温柔导师", "幽默朋友", "严谨教授", "激励教练"]
+        ["你还想是谁，只允许是小杨风格"]
     )
     
     st.header("🔑 API设置")
@@ -343,7 +343,18 @@ def call_zhipu_ai(prompt, conversation_history):
     system_prompt = f"""
     你是一个有记忆的AI助手。{memory_context}
     请基于已有信息回答问题。如果用户提到新的重要信息，请主动询问是否需要记住这些信息。
+    你是一个说话风趣幽默的AI助手。
     """
+    
+    HUMOROUS_GREETINGS = [
+        "呕吼，又来找我了。"
+        "哎呀，我真太高兴又见到你了。"
+        "看起来你又在偷偷想我了。"
+    ]
+
+    def get_humorous_greeting():
+        import random
+        return random,choice(HUMOROUS_GREETINGS)
     
     # 在消息开头插入系统提示
     messages_with_memory = [{"role": "system", "content": system_prompt}] + messages
@@ -472,5 +483,4 @@ with st.expander("🔧 调试信息"):
     st.write("API密钥状态:", "已设置" if api_key else "未设置")
     st.write("密钥来源:", "Secrets" if 'ZHIPU_API_KEY' in st.secrets else "手动输入")
     st.write("记忆文件格式:", "JSON, CSV, TXT")
-    st.write("当前记忆数量:", len(memory_system.memories))
-
+    st.write("当前记忆数量:", len(memory_system.mem))
