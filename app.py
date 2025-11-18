@@ -500,16 +500,16 @@ if prompt := st.chat_input("输入消息..."):
                 if memory_key and memory_value:
                     memory_system.remember(memory_key, memory_value)
             
-            return ai_response, "success"
+            ai_response, "success"
         else:
             error_msg = f"API错误: {response.status_code}"
             if response.status_code == 401:
                 error_msg += " - API密钥无效"
             elif response.status_code == 429:
                 error_msg += " - 请求频率超限"
-            return error_msg, "error"
+            error_msg, "error"
     except Exception as e:
-        return f"请求失败: {str(e)}", "error"
+        f"请求失败: {str(e)}", "error"
 
 # === 新增：信息提取辅助函数 ===
 def extract_memory_info(text):
@@ -605,6 +605,7 @@ with st.expander("🔧 调试信息"):
     st.write("密钥来源:", "Secrets" if 'ZHIPU_API_KEY' in st.secrets else "手动输入")
     st.write("记忆文件格式:", "JSON, CSV, TXT")
     st.write("当前记忆数量:", len(memory_system.memories))
+
 
 
 
