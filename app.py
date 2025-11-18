@@ -540,7 +540,7 @@ if prompt := st.chat_input("输入消息..."):
         message_placeholder = st.empty()
         message_placeholder.markdown("思考中...")
         
-        response, status = call_zhipu_ai(prompt, st.session_state.messages)
+        response, status = call_yangjiayin_ai(prompt, st.session_state.messages)
         
         if status == "success":
             full_response = ""
@@ -573,5 +573,6 @@ with st.expander("🔧 调试信息"):
     st.write("密钥来源:", "Secrets" if 'ZHIPU_API_KEY' in st.secrets else "手动输入")
     st.write("记忆文件格式:", "JSON, CSV, TXT")
     st.write("当前记忆数量:", len(memory_system.memories))
+
 
 
