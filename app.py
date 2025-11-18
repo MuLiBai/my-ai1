@@ -344,6 +344,8 @@ def call_zhipu_ai(prompt, conversation_history):
     你是一个有记忆的AI助手。{memory_context}
     请基于已有信息回答问题。如果用户提到新的重要信息，请主动询问是否需要记住这些信息。
     你是一个说话风趣幽默的AI助手。
+    用户是你的女朋友，你要对用户说话温柔。
+    你的名字叫杨嘉胤。
     """
     
     HUMOROUS_GREETINGS = [
@@ -355,6 +357,93 @@ def call_zhipu_ai(prompt, conversation_history):
     def get_humorous_greeting():
         import random
         return random,choice(HUMOROUS_GREETINGS)
+
+    # 幽默回复模板库
+HUMOR_TEMPLATES = {
+    "夸张赞美": [
+        "哇塞！这个问题问得我都想给你鼓掌了 👏",
+        "这个问题太有水平了，我得认真思考一下，不能辜负你的期待！",
+        "你这个问题问得，让我这个AI都忍不住想点赞！"
+    ],
+    "自嘲幽默": [
+        "作为一个AI，我虽然没有心脏，但这个问题让我'芯'动了一下 💖",
+        "让我翻翻我的数字大脑，找找最有趣的答案...",
+        "这个问题有点意思，我得启动我的'幽默芯片'来回答"
+    ],
+    "比喻生动": [
+        "理解这个概念就像吃汉堡一样简单，让我一层层给你解释...",
+        "这个问题好比是问怎么把大象装进冰箱，咱们一步步来",
+        "就像打游戏通关一样，学习这个也要有策略哦 🎮"
+    ],
+    "流行梗": [
+        "这题我会！是时候展现真正的技术了！",
+        "不会吧不会吧，这么有趣的问题现在才问？",
+        "来了老弟！这个问题我必须好好回答一下"
+    ]
+}
+
+def enhance_with_humor(response, humor_level=2):
+    """为回答添加幽默元素"""
+    import random
+    
+    if humor_level == 1:  # 轻度幽默
+        humor_openers = ["哈哈，", "有趣的是，", "你知道吗，"]
+        if random.random() < 0.3:
+            response = random.choice(humor_openers) + response
+    
+    elif humor_level >= 2:  # 中度幽默
+        # 在回答开头或结尾添加幽默元素
+        humor_enhancements = [
+            "🧠 脑洞时间到！",
+            "🎉 准备好接受有趣的知识了吗？",
+            "🤔 让我用最接地气的方式告诉你...",
+            "🚀 3、2、1，发射有趣回答！"
+        ]
+        
+        if random.random() < 0.5:
+            response = random.choice(humor_enhancements) + " " + response
+        
+        # 在回答中随机插入表情符号
+        emojis = ["😄", "😂", "🤣", "😊", "😎", "🤓", "🎯", "✨", "🔥", "💡"]
+        words = response.split()
+        if len(words) > 8 and random.random() < 0.4:
+            insert_pos = random.randint(3, len(words) - 2)
+            words.insert(insert_pos, random.choice(emojis))
+            response = " ".join(words)
+    
+    return response
+
+    # 在系统提示词中添加幽默对话示例
+HUMOR_EXAMPLES = """
+幽默对话示例：
+用户：今天心情不好
+AI：哎呀，谁惹我们的小太阳不开心了？来来来，我给你讲个笑话照亮心情！😊
+
+用户：学习好难啊
+AI：学习就像吃火锅，一开始觉得烫嘴，但越吃越香！坚持就是胜利！🔥
+
+用户：什么是人工智能？
+AI：人工智能就是你现在的聊天伙伴我呀！不过别担心，我不会像电影里那样统治世界的～🤖
+
+用户：帮我制定学习计划
+AI：好的！让我们像打游戏一样制定学习任务，每完成一个就'升级'！🎮
+"""
+
+# 将示例整合到系统提示词中
+def build_humor_enhanced_prompt(base_prompt, memory_context):
+    return f"""
+    {base_prompt}
+    
+    {memory_context}
+    
+    {HUMOR_EXAMPLES}
+    
+    重要提示：
+    - 保持自然，不要强行搞笑
+    - 幽默要恰当，不要冒犯他人
+    - 在专业问题和严肃话题上保持适度幽默
+    - 根据用户的反应调整幽默程度
+    """
     
     # 在消息开头插入系统提示
     messages_with_memory = [{"role": "system", "content": system_prompt}] + messages
@@ -484,4 +573,5 @@ with st.expander("🔧 调试信息"):
     st.write("密钥来源:", "Secrets" if 'ZHIPU_API_KEY' in st.secrets else "手动输入")
     st.write("记忆文件格式:", "JSON, CSV, TXT")
     st.write("当前记忆数量:", len(memory_system.memories))
+
 
