@@ -445,14 +445,14 @@ def build_humor_enhanced_prompt(base_prompt, memory_context):
     """
  
         # 检测是否需要特殊幽默回应
-    if detect_joke_request(prompt):
+   if detect_joke_request(prompt):
             joke_response = tell_random_joke()
             message_placeholder.markdown(joke_response)
             st.session_state.messages.append({"role": "assistant", "content": joke_response})
-    else:
+else:
             response, status = call_zhipu_ai(prompt, st.session_state.messages)
             
-        if status == "success":
+            if status == "success":
                 full_response = ""
                 for chunk in response.split():
                     full_response += chunk + " "
@@ -466,6 +466,7 @@ def build_humor_enhanced_prompt(base_prompt, memory_context):
                 humor_error = humorous_error_response("technical_error")
                 message_placeholder.markdown(humor_error)
                 st.session_state.messages.append({"role": "assistant", "content": humor_error})
+   
    
     # 在消息开头插入系统提示
     messages_with_memory = [{"role": "system", "content": system_prompt}] + messages
@@ -595,6 +596,7 @@ with st.expander("🔧 调试信息"):
     st.write("密钥来源:", "Secrets" if 'ZHIPU_API_KEY' in st.secrets else "手动输入")
     st.write("记忆文件格式:", "JSON, CSV, TXT")
     st.write("当前记忆数量:", len(memory_system.memories))
+
 
 
 
