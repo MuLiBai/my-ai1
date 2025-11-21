@@ -485,7 +485,7 @@ else:
             ai_response = result["choices"][0]["message"]["content"]
             
             # 自动保存重要信息
-            if should_remember:
+        if should_remember:
                 # 提取关键信息并保存
                 memory_key, memory_value = extract_memory_info(prompt)
                 if memory_key and memory_value:
@@ -596,6 +596,7 @@ with st.expander("🔧 调试信息"):
     st.write("密钥来源:", "Secrets" if 'ZHIPU_API_KEY' in st.secrets else "手动输入")
     st.write("记忆文件格式:", "JSON, CSV, TXT")
     st.write("当前记忆数量:", len(memory_system.memories))
+
 
 
 
