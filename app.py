@@ -497,7 +497,7 @@ try:
             elif response.status_code == 429:
                 error_msg += " - 请求频率超限"
             error_msg, "error"
-    except Exception as e:
+except Exception as e:
         f"请求失败: {str(e)}", "error"
 
 # === 新增：信息提取辅助函数 ===
@@ -594,6 +594,7 @@ with st.expander("🔧 调试信息"):
     st.write("密钥来源:", "Secrets" if 'ZHIPU_API_KEY' in st.secrets else "手动输入")
     st.write("记忆文件格式:", "JSON, CSV, TXT")
     st.write("当前记忆数量:", len(memory_system.memories))
+
 
 
 
