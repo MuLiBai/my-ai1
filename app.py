@@ -442,40 +442,6 @@ def build_humor_enhanced_prompt(base_prompt, memory_context):
     - 根据用户的反应调整幽默程度
     """
    
-   # 在消息开头插入系统提示
-messages_with_memory = [{"role": "system", "content": system_prompt}] + messages
-    
-data = {
-        "model": "glm-3-turbo",
-        "messages": messages_with_memory,
-        "temperature": 0.7,
-        "max_tokens": st.secrets.get("MAX_TOKENS", 500)  # 使用Secrets中的配置或默认值
-    }
-    
-try:
-        response = requests.post(url, headers=headers, json=data, timeout=30)
-        if response.status_code == 200:
-            result = response.json()
-            ai_response = result["choices"][0]["message"]["content"]
-            
-            # 自动保存重要信息
-            if should_remember:
-                # 提取关键信息并保存
-                memory_key, memory_value = extract_memory_info(prompt)
-                if memory_key and memory_value:
-                    memory_system.remember(memory_key, memory_value)
-            
-            ai_response, "success"
-        else:
-            error_msg = f"API错误: {response.status_code}"
-            if response.status_code == 401:
-                error_msg += " - API密钥无效"
-            elif response.status_code == 429:
-                error_msg += " - 请求频率超限"
-            error_msg, "error"
-except Exception as e:
-        f"请求失败: {str(e)}", "error"
-
 # === 新增：信息提取辅助函数 ===
 def extract_memory_info(text):
     """从文本中提取需要记忆的信息"""
@@ -570,6 +536,7 @@ with st.expander("🔧 调试信息"):
     st.write("密钥来源:", "Secrets" if 'ZHIPU_API_KEY' in st.secrets else "手动输入")
     st.write("记忆文件格式:", "JSON, CSV, TXT")
     st.write("当前记忆数量:", len(memory_system.memories))
+
 
 
 
