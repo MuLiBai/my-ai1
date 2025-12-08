@@ -344,7 +344,6 @@ def call_zhipu_ai(prompt, conversation_history):
     你是一个有记忆的AI助手。{memory_context}
     请基于已有信息回答问题。如果用户提到新的重要信息，请主动询问是否需要记住这些信息。
     你是一个说话风趣幽默的AI助手。
-    用户是你的女朋友，你要对用户说话温柔。
     """
     
     HUMOROUS_GREETINGS = [
@@ -356,7 +355,7 @@ def call_zhipu_ai(prompt, conversation_history):
     def get_humorous_greeting():
         import random
         return random,choice(HUMOROUS_GREETINGS)
-
+    
     # 幽默回复模板库
 HUMOR_TEMPLATES = {
     "夸张赞美": [
@@ -411,8 +410,7 @@ def enhance_with_humor(response, humor_level=2):
             response = " ".join(words)
     
     return response
-
-    # 在系统提示词中添加幽默对话示例
+# 在系统提示词中添加幽默对话示例
 HUMOR_EXAMPLES = """
 幽默对话示例：
 用户：今天心情不好
@@ -443,7 +441,8 @@ def build_humor_enhanced_prompt(base_prompt, memory_context):
     - 在专业问题和严肃话题上保持适度幽默
     - 根据用户的反应调整幽默程度
     """
- 
+    
+        
         # 检测是否需要特殊幽默回应
 if detect_joke_request(prompt):
             joke_response = tell_random_joke()
@@ -467,25 +466,24 @@ else:
                 message_placeholder.markdown(humor_error)
                 st.session_state.messages.append({"role": "assistant", "content": humor_error})
    
-   
-    # 在消息开头插入系统提示
-    messages_with_memory = [{"role": "system", "content": system_prompt}] + messages
+   # 在消息开头插入系统提示
+messages_with_memory = [{"role": "system", "content": system_prompt}] + messages
     
-    data = {
+data = {
         "model": "glm-3-turbo",
         "messages": messages_with_memory,
         "temperature": 0.7,
         "max_tokens": st.secrets.get("MAX_TOKENS", 500)  # 使用Secrets中的配置或默认值
     }
     
-    try:
+try:
         response = requests.post(url, headers=headers, json=data, timeout=30)
         if response.status_code == 200:
             result = response.json()
             ai_response = result["choices"][0]["message"]["content"]
             
             # 自动保存重要信息
-        if should_remember:
+            if should_remember:
                 # 提取关键信息并保存
                 memory_key, memory_value = extract_memory_info(prompt)
                 if memory_key and memory_value:
